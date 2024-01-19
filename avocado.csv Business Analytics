@@ -1,0 +1,299 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+import os
+import datetime as dt
+import seaborn as sns 
+plt.style.use('ggplot')
+import warnings
+warnings.filterwarnings('ignore')
+import statsmodels.api as sm
+
+from sklearn.model_selection  import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.cluster import KMeans
+from sklearn.ensemble import IsolationForest
+from sklearn.metrics import mean_squared_error, accuracy_score
+
+
+df = pd.read_csv('avocado.csv')
+
+
+
+# ### Preprocessing
+
+
+
+df=df.drop(columns='Unnamed: 0')
+
+df['Date']=pd.to_datetime(df['Date'])
+
+
+df['Month']=df['Date'].dt.month
+
+
+for col in df.select_dtypes('object').columns:
+    print(col,df[col].nunique())
+
+
+
+# ###### Removing Exteme Values
+
+fig,ax=plt.subplots(figsize=(15,10))
+df.hist(bins=20,ax=ax)
+ax.set_yscale('log')
+plt.show()
+
+
+
+random = df['region'].sample(3)
+sample = df[df['region'].isin(random)]
+
+plt.figure(figsize=(15, 5))
+ax = sns.lineplot(data=sample, x='Date', y='AveragePrice', hue='region', palette=['red', 'blue', 'green'])
+df.groupby('Date')['AveragePrice'].mean().plot(ax=ax, label='Average for all regions', color='black')
+plt.legend()
+plt.show()
+
+
+
+
+
+# Sales Forecasting
+sales_data=df
+X_sales = sales_data.select_dtypes(include="number")
+del X_sales['AveragePrice']
+y_sales = sales_data['AveragePrice']
+X_train_sales, X_test_sales, y_train_sales, y_test_sales = train_test_split(X_sales, y_sales, test_size=0.2, random_state=42)
+model_sales = LinearRegression()
+model_sales.fit(X_train_sales, y_train_sales)
+predictions_sales = model_sales.predict(X_test_sales)
+mse_sales = mean_squared_error(y_test_sales, predictions_sales)
+print(f"Sales Forecasting - Mean Squared Error: {mse_sales}")
+
+
+
+
+
+
+#fit linear regression model
+model = sm.OLS(y_sales, X_sales).fit()
+
+#view model summary
+print(model.summary())
+
+
+
+# Customer Segmentation
+customer_data = pd.read_csv('Mall_Customers.csv')
+one_hot = pd.get_dummies(customer_data['Genre'])
+customer_data_enc=customer_data.copy()
+customer_data_enc.drop('Genre', axis=1, inplace=True)
+X_customer=pd.concat([customer_data_enc, one_hot], axis=1)
+kmeans = KMeans(n_clusters=3)
+kmeans.fit(X_customer)
+customer_data['cluster'] = kmeans.labels_
+
+c = ['blue', 'red', 'green']
+c_dict=dict(zip(np.unique(customer_data['cluster']), c))
+
+m = ['o', 'x']
+m_dict = dict(zip(np.unique(customer_data['Genre']), m))
+
+for i in range(customer_data.shape[0]):
+    plt.scatter(customer_data['Age'][i], customer_data['Annual_Income_(k$)'][i], c=c_dict[customer_data['cluster'][i]],
+                marker= m_dict[customer_data['Genre'][i]],cmap='viridis')
+        
+plt.xlabel('Spending_Score')
+plt.ylabel('Age')
+plt.title('Customer Segmentation')
+plt.show()
+
+
+# Churn Prediction
+
+import pandas as pd
+
+df = pd.read_csv('churn_data.csv')
+df.head()
+
+df.info()
+
+df["Churn"].value_counts()
+
+
+cols = ['gender','SeniorCitizen',"Partner","Dependents"]
+numerical = cols
+
+plt.figure(figsize=(20,4))
+
+for i, col in enumerate(numerical):
+    ax = plt.subplot(1, len(numerical), i+1)
+    sns.countplot(x=str(col), data=df)
+    ax.set_title(f"{col}")
+ 	
+sns.boxplot(x='Churn', y='MonthlyCharges', data=df)
+
+
+cols = ['InternetService',"TechSupport","OnlineBackup","Contract"]
+
+
+
+plt.figure(figsize=(14,4))
+
+for i, col in enumerate(cols):
+    ax = plt.subplot(1, len(cols), i+1)
+    sns.countplot(x ="Churn", hue = str(col), data = df)
+    ax.set_title(f"{col}")
+
+
+df['TotalCharges'] = df['TotalCharges'].apply(lambda x: pd.to_numeric(x, errors='coerce')).dropna()
+
+
+
+cat_features = df.drop(['TotalCharges','MonthlyCharges','SeniorCitizen','tenure'],axis=1)
+
+cat_features.head()
+
+categorical_cols=cat_features.copy()
+
+from sklearn import preprocessing
+
+ohe = preprocessing.OneHotEncoder(sparse=False)
+# df_cat = cat_features.apply(ohe.fit_transform)
+df_cat = ohe.fit_transform(cat_features)
+
+
+df_enc = df.drop(categorical_cols, axis=1)  # Remove the original categorical columns
+df_enc = np.concatenate((df_enc, df_cat), axis=1) 
+
+
+df_enc = np.nan_to_num(df_enc)
+
+
+X = df_enc
+y = df['Churn']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+from imblearn.over_sampling import SMOTE
+
+oversample = SMOTE(k_neighbors=5)
+X_smote, y_smote = oversample.fit_resample(X_train, y_train)
+
+y_smote.value_counts()
+
+
+from sklearn.ensemble import RandomForestClassifier
+
+rf = RandomForestClassifier(n_estimators=500,random_state=46)
+rf.fit(X_smote,y_smote)
+
+# rf.fit(X_train,y_train)
+
+from sklearn.metrics import accuracy_score
+
+preds = rf.predict(X_test)
+print(accuracy_score(preds,y_test))
+
+
+# Supply Chain Optimization
+import gurobipy as gp
+from gurobipy import GRB
+
+# Create a new model
+model_supply_chain = gp.Model("Supply_Chain_Optimization")
+
+# Decision variables
+x_supply_chain = model_supply_chain.addVar(lb=0, vtype=GRB.INTEGER, name="Product_A_units")
+y_supply_chain = model_supply_chain.addVar(lb=0, vtype=GRB.INTEGER, name="Product_B_units")
+
+# Objective function: Maximize total profit
+model_supply_chain.setObjective(20 * x_supply_chain + 30 * y_supply_chain, sense=GRB.MAXIMIZE)
+
+# Constraints
+model_supply_chain.addConstr(3 * x_supply_chain + 4 * y_supply_chain <= 25, "Constraint_1")
+model_supply_chain.addConstr(2 * x_supply_chain + 5 * y_supply_chain <= 20, "Constraint_2")
+
+cwd = os.getcwd()
+model_supply_chain.write(cwd+'\\model_supply_chain.lp')
+
+# Optimize the model
+model_supply_chain.optimize()
+
+# Print the optimal solution
+if model_supply_chain.status == GRB.OPTIMAL:
+    optimal_product_A_units = x_supply_chain.x
+    optimal_product_B_units = y_supply_chain.x
+    print(f"Supply Chain Optimization - Optimal units of Product A: {optimal_product_A_units}")
+    print(f"Supply Chain Optimization - Optimal units of Product B: {optimal_product_B_units}")
+
+
+
+
+          
+# Fraud Detection - 0.172% of all transactions are fraud
+transaction_data = pd.read_csv('creditcard.csv')
+del transaction_data[transaction_data.columns[-1]]
+X_fraud = transaction_data
+model_fraud = IsolationForest(contamination=0.2)
+model_fraud.fit(X_fraud)
+predictions_fraud = model_fraud.predict(X_fraud)
+anomalies = transaction_data[predictions_fraud == -1]
+print("Fraud Detection - Detected anomalies:")
+print(anomalies)
+
+anomalies.shape
+X_fraud.shape
+
+
+
+#  Healthcare Analytics
+
+# Parameters (example values, adjust as needed)
+population = 1000000  # Total population
+infected = 1000  # Initial number of infected individuals
+recovery_rate = 0.1  # Recovery rate
+incubation_rate = 0.05  # Rate of exposed individuals becoming infectious
+transmission_rate = 0.3  # Transmission rate
+days = 180  # Simulation duration
+
+# Initial compartments
+susceptible = population - infected
+exposed = 0
+recovered = 0
+
+# Lists to store population compartments over time
+susceptible_list = [susceptible]
+exposed_list = [exposed]
+infected_list = [infected]
+recovered_list = [recovered]
+
+# SEIR Model Simulation
+for day in range(days):
+    new_exposed = transmission_rate * infected * susceptible / population
+    new_infected = incubation_rate * exposed
+    new_recovered = recovery_rate * infected
+    
+    susceptible -= new_exposed
+    exposed += new_exposed - new_infected
+    infected += new_infected - new_recovered
+    recovered += new_recovered
+    
+    susceptible_list.append(susceptible)
+    exposed_list.append(exposed)
+    infected_list.append(infected)
+    recovered_list.append(recovered)
+
+# Plotting the results
+plt.figure(figsize=(10, 6))
+plt.plot(susceptible_list, label='Susceptible')
+plt.plot(exposed_list, label='Exposed')
+plt.plot(infected_list, label='Infected')
+plt.plot(recovered_list, label='Recovered')
+plt.xlabel('Days')
+plt.ylabel('Population')
+plt.title('SEIR Model Simulation')
+plt.legend()
+plt.grid(True)
+plt.show()
