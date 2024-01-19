@@ -1,0 +1,66 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+plt.rcParams["figure.figsize"] = (20,10)
+
+from sklearn import model_selection
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.ensemble import RandomForestClassifier,AdaBoostClassifier
+
+#veriyi oku
+data = pd.read_csv('indian_liver_patient.csv')
+
+data.head()
+
+#Gender haric tum sutunlari kullanacagiz, Gender ise 0-1'e cevrilebilir.
+
+
+data_to_use = data
+del data_to_use['Gender']
+data_to_use.dropna(inplace=True)
+
+
+
+data_to_use.head()
+
+#Akciger rahatsizligi olup olmadigini tahmin etmek istiyoruz:
+
+values = data_to_use.values
+ 
+Y = values[:,9]
+X = values[:,0:9]
+
+#random seed belirleyelim
+random_seed = 5
+
+# test edecegimiz modelleri listeleyelim.
+outcome = []
+model_names = []
+models = [('LogReg', LogisticRegression()), 
+          ('SVM', SVC()), 
+          ('DecTree', DecisionTreeClassifier()),
+          ('KNN', KNeighborsClassifier()),
+          ('LinDisc', LinearDiscriminantAnalysis()),
+          ('GaussianNB', GaussianNB()),
+          ('RF', RandomForestClassifier()),
+          ('AdaBoost', AdaBoostClassifier())]
+
+for model_name, model in models:
+    k_fold_validation = model_selection.KFold(n_splits=10)
+    results = model_selection.cross_val_score(model, X, Y, cv=k_fold_validation, scoring='accuracy')
+    outcome.append(results)
+    model_names.append(model_name)
+    output_message = "%s| Mean=%f STD=%f" % (model_name, results.mean(), results.std())
+    print(output_message)
+
+
+fig = plt.figure()
+fig.suptitle('Machine Learning Model Comparison')
+ax = fig.add_subplot(111)
+plt.boxplot(outcome)
+ax.set_xticklabels(model_names)
+plt.show()
