@@ -1,0 +1,114 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+train = pd.read_csv('toxic_comment.csv')
+train.head()
+
+train['comment_text'].str.split().head()
+train['comment_text'].str.split(expand=True).head()
+train['comment_text'].str.split(expand=True).unstack().head()
+
+
+#parçalanan cümlelerden elde edilen kelimeleri bir histogram olarak görüntülemeyi amaçlar.
+# =============================================================================
+import plotly.io as pio
+import plotly.express as px
+pio.renderers.default='browser'
+# =============================================================================
+
+
+import plotly.offline as py
+py.init_notebook_mode(connected=True)
+import plotly.graph_objs as go
+
+words = train['comment_text'].str.split(expand=True).unstack().value_counts()
+data = [go.Bar(
+            x = words.index.values[:30],
+            y = words.values[:30],
+            marker= dict(colorscale='Jet',
+                         color = words.values[:30]),
+            text='ranking'
+    )]
+layout = go.Layout(
+    title='Word Frequency Ranking')
+
+fig = go.Figure(data=data, layout=layout)
+py.iplot(fig, filename='ranking')
+
+
+
+#kelime bulutu
+
+from wordcloud import WordCloud, STOPWORDS
+stopwords=set(STOPWORDS)
+print("The number of stopwords is {0}".format(len(stopwords)))
+print(stopwords)
+
+
+
+
+text = train["comment_text"].values
+wc = WordCloud(background_color="black", max_words=1000, stopwords=stopwords)
+wc.generate(" ".join(text))
+
+plt.figure(figsize=(16,12))
+plt.imshow(wc.recolor(colormap='PuBu' , random_state=42),interpolation='bilinear')
+plt.axis("off")
+plt.show()
+
+
+#nltk
+
+train.comment_text.values[2]
+
+sample = train.comment_text.values[2]
+print(sample)
+print("")
+print(sample.split(" "))
+
+import nltk
+nltk.download('punkt')
+tokens = nltk.word_tokenize(sample)
+print(tokens)
+print()
+print("The number of words in sample is {0}".format(len(tokens)))
+
+print(list(set(tokens)-stopwords))
+print()
+print("The number of words in sample after removing stopwords is {0}".format(len(list(set(tokens)-stopwords))))
+
+from nltk.stem import SnowballStemmer
+print(SnowballStemmer.languages)
+
+print()
+snowball = nltk.stem.SnowballStemmer("english")
+print(snowball.stem('selling'))
+print(snowball.stem('having'))
+print(snowball.stem('wolves'))
+print(snowball.stem('decreases'))
+
+
+from nltk.stem import WordNetLemmatizer
+nltk.download('wordnet')
+wn = WordNetLemmatizer()
+print(wn.lemmatize('selling'))
+print(wn.lemmatize('having'))
+print(wn.lemmatize('wolves'))
+print(wn.lemmatize('decreases'))
+
+
+print(wn.lemmatize('selling', pos = 'v'))
+
+
+
+from sklearn.feature_extraction.text import CountVectorizer
+cumleler = ["Ali ata bak", 
+            "Ali bana bak lütfen"]
+vector = CountVectorizer(min_df=0)
+vector_cumleler = vector.fit_transform(cumleler)
+vector_cumleler
+
+
+
+print(vector.get_feature_names())
+print()
+print(vector_cumleler.toarray())
