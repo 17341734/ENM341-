@@ -1,0 +1,77 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import GridSearchCV, cross_val_score, KFold
+from sklearn.ensemble import RandomForestRegressor
+
+
+from sklearn.datasets import fetch_california_housing
+
+# Load the California Housing Prices dataset
+california_housing = fetch_california_housing()
+
+# Convert the dataset into a DataFrame
+data = pd.DataFrame(data=california_housing.data, columns=california_housing.feature_names)
+
+# Define the feature matrix X (input variables)
+# In this example, we'll use a subset of features for simplicity (you can choose more features)
+# For example, we'll use 'MedInc' (median income) and 'AveRooms' (average number of rooms)
+X = data[['MedInc', 'AveRooms']]
+
+# Define the target variable y (median house value)
+y = california_housing.target
+
+# Display the first few rows of X and y
+print("X (Features):")
+print(X.head())
+
+print("\ny (Target Variable - Median House Value):")
+print(y[:5])  # Display the first 5 values of y for illustration
+
+
+
+
+# Define the hyperparameter grid for Random Forest
+param_grid = {
+    'n_estimators': [100, 200, 300],
+    'max_depth': [None, 10, 20, 30]
+}
+
+# Create an outer cross-validation loop (e.g., 5-fold)
+outer_cv = KFold(n_splits=10, shuffle=True, random_state=42)
+
+# Initialize lists to store results
+outer_scores = []
+i=0
+# Outer cross-validation loop
+for train_idx, test_idx in outer_cv.split(X):
+    X_train, X_test = X.iloc[train_idx,:], X.iloc[test_idx,:]
+    y_train, y_test = y[train_idx], y[test_idx]
+
+    # Create a Random Forest regressor
+    rf_estimator = RandomForestRegressor()
+
+    # Create an inner cross-validation loop (e.g., 3-fold) for hyperparameter tuning
+    inner_cv = KFold(n_splits=5, shuffle=True, random_state=42)
+
+    # Create a GridSearchCV object for hyperparameter tuning
+    grid_search = GridSearchCV(estimator=rf_estimator, param_grid=param_grid, cv=inner_cv)
+
+    # Fit the grid_search on the training data to find the best hyperparameters
+    grid_search.fit(X_train, y_train)
+
+    # Get the best hyperparameters
+    best_params = grid_search.best_params_
+
+    # Train a Random Forest model with the best hyperparameters on the entire training set
+    best_rf_estimator = RandomForestRegressor(**best_params)
+    best_rf_estimator.fit(X_train, y_train)
+
+    # Evaluate the model on the test set
+    test_score = best_rf_classifier.score(X_test, y_test)
+    outer_scores.append(test_score)
+    i=i+1
+
+# Calculate and print the mean and standard deviation of outer scores
+mean_outer_score = np.mean(outer_scores)
+std_outer_score = np.std(outer_scores)
+print(f"Mean Accuracy: {mean_outer_score:.2f} +/- {std_outer_score:.2f}")
