@@ -1,0 +1,73 @@
+import numpy as np
+import pandas as pd
+import seaborn as sn
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_breast_cancer
+
+  
+
+# Breast cancer dataset
+cancer = load_breast_cancer()
+(X_cancer, y_cancer) = load_breast_cancer(return_X_y = True)
+
+
+# PCA - first two principal components
+
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.datasets import load_breast_cancer
+
+cancer = load_breast_cancer()
+(X_cancer, y_cancer) = load_breast_cancer(return_X_y = True)
+
+# each feature should be centered (zero mean) and with unit variance
+X_standardized = StandardScaler().fit(X_cancer).transform(X_cancer)  
+
+pca = PCA(n_components = 2).fit(X_standardized) #tb bulunde w1 w2 
+
+X_pca = pca.transform(X_standardized)
+print(X_cancer.shape, X_pca.shape)
+
+
+# Plotting the PCA-transformed  breast cancer dataset
+
+plt.scatter(X_pca[:,0], X_pca[:,1], c=y_cancer, alpha=0.4, edgecolors='black', s=65);
+
+
+plt.xlabel('First principal component')
+plt.ylabel('Second principal component')
+plt.title('Breast Cancer Dataset PCA (n_components = 2)');
+
+plt.show()
+
+
+
+
+# MDS 
+
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.manifold import MDS
+from sklearn.datasets import load_breast_cancer
+
+cancer = load_breast_cancer()
+(X_cancer, y_cancer) = load_breast_cancer(return_X_y = True)
+
+# each feature should be centered (zero mean) and with unit variance
+X_standardized = StandardScaler().fit(X_cancer).transform(X_cancer)  
+
+mds = MDS(n_components = 2)
+
+X_mds = mds.fit_transform(X_standardized)
+
+
+print(X_cancer.shape, X_mds.shape)
+
+plt.scatter(X_mds[:,0], X_mds[:,1], c=y_cancer, alpha=0.4, edgecolors='black', s=65);
+
+plt.xlabel('First MDS dimension')
+plt.ylabel('Second MDS dimension')
+plt.title('Breast Cancer Dataset MDS (n_components = 2)');
+
+plt.show()
