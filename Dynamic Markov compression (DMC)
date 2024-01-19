@@ -1,0 +1,82 @@
+import numpy as np
+
+# Define the MDP
+# States: S = {0, 1, 2, ..., n-1}
+# Actions: A = {0, 1, 2}
+# Transition probabilities: P[s][a][s'] = P(s' | s, a)
+# Rewards: R[s][a] = expected reward for taking action a in state s
+
+# Example MDP parameters
+num_states = 5  # Increase the number of states
+num_actions = 3  # Increase the number of actions
+
+# Transition probabilities for the expanded MDP
+P = np.array([
+    # Transition probabilities for action 0
+    [
+        [0.7, 0.2, 0.1, 0.0, 0.0],
+        [0.3, 0.4, 0.3, 0.0, 0.0],
+        [0.0, 0.3, 0.4, 0.3, 0.0],
+        [0.0, 0.0, 0.3, 0.4, 0.3],
+        [0.0, 0.0, 0.0, 0.2, 0.8]
+    ],
+    # Transition probabilities for action 1
+    [
+        [0.8, 0.1, 0.1, 0.0, 0.0],
+        [0.2, 0.6, 0.2, 0.0, 0.0],
+        [0.0, 0.2, 0.6, 0.2, 0.0],
+        [0.0, 0.0, 0.2, 0.6, 0.2],
+        [0.0, 0.0, 0.0, 0.1, 0.9]
+    ],
+    # Transition probabilities for action 2
+    [
+        [0.9, 0.1, 0.0, 0.0, 0.0],
+        [0.1, 0.8, 0.1, 0.0, 0.0],
+        [0.0, 0.1, 0.8, 0.1, 0.0],
+        [0.0, 0.0, 0.1, 0.8, 0.1],
+        [0.0, 0.0, 0.0, 0.1, 0.9]
+    ]
+])
+
+# Rewards for the expanded MDP
+R = np.array([
+    [1.0, 2.0, 3.0],
+    [3.0, 0.0, -1.0],
+    [4.0, 1.0, 2.0],
+    [0.0, -2.0, 5.0],
+    [2.0, 1.0, 4.0]
+])
+
+# Policy iteration function
+def policy_iteration(P, R, num_states, num_actions, gamma=0.9, max_iterations=1000):
+    V = np.zeros(num_states)  # Initialize value function
+    policy = np.zeros(num_states, dtype=int)  # Initialize policy
+
+    for _ in range(max_iterations):
+        # Policy evaluation
+        for s in range(num_states):
+            policy_a = policy[s]
+            V[s] = R[s][policy_a] + gamma * np.sum(P[policy_a][s] * V)
+
+        # Policy improvement
+        policy_stable = True
+        for s in range(num_states):
+            old_action = policy[s]
+            action_values = np.zeros(num_actions)
+            for a in range(num_actions):
+                action_values[a] = R[s][a] + gamma * np.sum(P[a][s] * V)
+            best_action = np.argmax(action_values)
+            policy[s] = best_action
+            if old_action != best_action:
+                policy_stable = False
+
+        if policy_stable:
+            break
+
+    return policy, V
+
+# Run policy iteration
+optimal_policy, optimal_value_function = policy_iteration(P, R, num_states, num_actions)
+
+print("Optimal Policy:", optimal_policy)
+print("Optimal Value Function:", optimal_value_function)
