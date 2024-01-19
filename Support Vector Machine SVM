@@ -1,0 +1,80 @@
+# Set up environment
+import scipy.io
+import matplotlib.pyplot as plt
+import matplotlib 
+import pandas as pd
+import numpy as np
+import pickle
+from sklearn.model_selection import GridSearchCV
+
+#######################################################################################################
+
+# Veriyi oku
+with open("wk6_data.pickle", "rb") as myfile:
+    X1, X2, X3, y1, y2, y3 = pickle.load(myfile)
+
+Xs, ys = [X1, X2, X3], [y1, y2, y3]
+
+# Standardize et
+from sklearn.preprocessing import StandardScaler
+scaler=StandardScaler()
+
+for i in np.arange(0, 3, 1):
+    scaler.fit(Xs[i])
+    Xs[i] = scaler.transform(Xs[i])
+    
+X1, X2, X3 = Xs
+y1, y2, y3 = ys
+
+
+
+# Uc farkli kumeyi goruntuleyelim 
+fig, axs = plt.subplots(figsize=[12, 3], nrows=1, ncols=3, sharex=False, sharey=False)
+
+for i in np.arange(0, 3, 1):
+    axs[i].scatter(Xs[i][:, 0], Xs[i][:, 1], color=["r" if y == 0 else "b" for y in ys[i]])
+    axs[i].set_title("Data Set #%i" % (i+1,))
+
+fig.show()
+#######################################################################################################
+from sklearn.svm import SVC
+
+
+#######################################################################################################
+x1s = np.linspace(min(X2[:, 0]), max(X2[:, 0]), 600)
+x2s = np.linspace(min(X2[:, 1]), max(X2[:, 1]), 600)
+points = np.array([[x1, x2] for x1 in x1s for x2 in x2s])
+
+#######################################################################################################
+
+# Parametre secimi icin grid search yapalim
+params_dict = {"C": np.logspace(-1, 3, 100), "gamma": np.linspace(0.0001, 10, 100)}
+svm = SVC(kernel="rbf")
+
+# Grid search
+search = GridSearchCV(estimator=svm, param_grid=params_dict)
+search.fit(X3, y3)
+
+print("Best parameter values:", search.best_params_)
+print("CV Score with best parameter values:", search.best_score_)
+
+df = pd.DataFrame(search.cv_results_)
+df.head()
+
+# Grid search sonucu elde edilen en iyi siniflandiriciyi secelim
+best_svm = search.best_estimator_
+best_svm.fit(X3, y3)
+
+# Her ornek icin karar fonk. degerini hesaplayalim, sinira yakin olanlari elde tutalim
+dists = best_svm.decision_function(points)
+bounds = np.array([pt for pt, dist in zip(points, dists) if abs(dist)<0.05])
+
+# Karar sinirini gorsellestirelim
+fig, ax = plt.subplots()
+
+ax.scatter(X3[:, 0], X3[:, 1], color=["r" if y == 0 else "b" for y in y3], label="data")
+ax.scatter(bounds[:, 0], bounds[:, 1], color="g", s=3, label="decision boundary")
+ax.set_title("Grid-Search Optimized SVM")
+
+fig.show()
+quit()
