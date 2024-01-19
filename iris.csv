@@ -1,0 +1,139 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+import os
+os.chdir('C:/Users/dell/YandexDisk/Ticaret_dersler/ENM341/')
+
+#Verinin yüklenmesi   
+    
+iris = pd.read_csv("iris.csv")
+
+print(iris.shape) #satır  sütun 
+
+print(iris.columns) #sütun isimleri
+
+
+iris["species"].value_counts()
+np.unique(iris["species"])
+
+# 1D scatter plot - sadece petal_length için
+iris_setosa = iris.loc[iris["species"] == "setosa"];
+iris_virginica = iris.loc[iris["species"] == "virginica"];
+iris_versicolor = iris.loc[iris["species"] == "versicolor"];
+plt.plot(iris_setosa["petal_length"],np.zeros_like(iris_setosa["petal_length"]), 'o')
+plt.plot(iris_versicolor["petal_length"],np.zeros_like(iris_versicolor["petal_length"]), 'o')
+plt.plot(iris_virginica["petal_length"],np.zeros_like(iris_virginica["petal_length"]), 'o')
+plt.grid()
+plt.show()
+
+
+# 2D scatter plot - sepal_length ve sepal_width için
+iris.plot(kind="scatter",x="sepal_length",y="sepal_width")
+plt.show()
+
+# 2D scatter - çiçek grubuna göre renklendirme
+sns.set_style("whitegrid");
+sns.FacetGrid(iris,hue="species",height=4) \
+    .map(plt.scatter,"sepal_length","sepal_width") \
+    .add_legend()
+plt.show()
+
+# 3D scatter plot
+import plotly.express as px
+fig = px.scatter_3d(iris, x='sepal_length', y='sepal_width', z='petal_width',color='species')
+fig.show()
+
+fig.show(renderer='browser')
+
+# ikili grafikler
+sns.set_style("whitegrid"); 
+sns.pairplot(iris,hue="species",size=3); 
+plt.show()
+
+# Histogram ve pdf - distplot komutu ile
+sns.FacetGrid(iris,hue="species",size=5) \
+    .map(sns.distplot,"petal_length") \
+    .add_legend();
+    
+plt.show();
+
+
+# pdf kullanılarak tek-değişkenli analiz
+
+sns.FacetGrid(iris,hue="species",size=5) \
+    .map(sns.distplot,"petal_width") \
+    .add_legend();
+    
+plt.show();
+
+sns.FacetGrid(iris,hue="species",size=5) \
+    .map(sns.distplot,"sepal_width") \
+    .add_legend();
+    
+plt.show();
+
+sns.FacetGrid(iris,hue="species",size=5) \
+    .map(sns.distplot,"sepal_length") \
+    .add_legend();
+    
+plt.show();
+
+# CDF grafiği
+
+iris_setosa = iris.loc[iris["species"] == "setosa"];
+iris_virginica = iris.loc[iris["species"] == "virginica"];
+iris_versicolor = iris.loc[iris["species"] == "versicolor"];
+counts, bin_edges = np.histogram(iris_setosa['petal_length'], bins=10, density = True)
+pdf = counts/(sum(counts))
+print(pdf); 
+
+print(bin_edges);
+
+cdf = np.cumsum(pdf)
+plt.grid()
+plt.plot(bin_edges[1:],pdf);
+plt.plot(bin_edges[1:], cdf)
+plt.show()
+
+# ortalama, varyans, standart sapma
+
+print("Means:")
+print(np.mean(iris_setosa["petal_length"]))
+print(np.mean(np.append(iris_setosa["petal_length"],50)));
+print(np.mean(iris_virginica["petal_length"]))
+print(np.mean(iris_versicolor["petal_length"]))
+print("\nStd-dev:");
+print(np.std(iris_setosa["petal_length"]))
+print(np.std(iris_virginica["petal_length"]))
+print(np.std(iris_versicolor["petal_length"]))
+
+# Box-plot (kutu grafiği) and whisker (bıyık)
+
+sns.boxplot(x="species",y="petal_length", data=iris)
+plt.show()
+
+
+#stem leaf (dal-yaprak) plot
+
+import stemgraphic
+  
+data = [16, 25, 47, 56, 23, 45, 19, 55, 44, 27]
+  
+# stem_graphic fonksiyonunun çağrılması
+stemgraphic.stem_graphic(data, scale = 10)
+  
+# stem bölümlerinin ayrılması
+stems = [1, 1, 2, 2, 2, 4, 4, 4, 5, 5]
+  
+plt.ylabel('Data')   # y ekseni etiketi
+  
+plt.xlabel('stems')   # x ekseni etiketi
+  
+plt.xlim(0, 10)   # x ekseni değerleri için sınırlar
+  
+plt.stem(stems, data)   # istenilen grafik
+
+plt.show()
